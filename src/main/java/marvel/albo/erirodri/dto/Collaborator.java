@@ -11,33 +11,34 @@ package marvel.albo.erirodri.dto;
  */
 public class Collaborator {
 
-    private int idCollaboratorDto;
-    private String fullNameCollaboratorDto;
+    private String resourceURI;
+    private String name;
+    private String role;
 
     public Collaborator() {
     }
 
-    public int getIdCollaboratorDto() {
-        return idCollaboratorDto;
+    public String getResourceURI() {
+        return resourceURI;
     }
 
-    public void setIdCollaboratorDto(int idCollaboratorDto) {
-        this.idCollaboratorDto = idCollaboratorDto;
+    public void setResourceURI(String resourceURI) {
+        this.resourceURI = resourceURI;
     }
 
-    public String getFullNameCollaboratorDto() {
-        return fullNameCollaboratorDto;
+    public String getName() {
+        return name;
     }
 
-    public void setFullNameCollaboratorDto(String fullNameCollaboratorDto) {
-        this.fullNameCollaboratorDto = fullNameCollaboratorDto;
+    public void setName(String name) {
+        this.name = name;
     }
 
-    @Override
-    public String toString() {
-        return "Collaborator{" +
-                "idCollaboratorDto=" + idCollaboratorDto +
-                ", fullNameCollaboratorDto='" + fullNameCollaboratorDto + '\'' +
-                '}';
+    public String getRole() {
+        return role;
+    }
+
+    public void setRole(String role) {
+        this.role = role;
     }
 }

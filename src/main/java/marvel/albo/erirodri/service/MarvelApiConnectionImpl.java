@@ -1,5 +1,6 @@
 package marvel.albo.erirodri.service;
 
+import com.fasterxml.jackson.databind.ObjectMapper;
 import marvel.albo.erirodri.configuration.EnvVariables;
 import marvel.albo.erirodri.dto.Character;
 import marvel.albo.erirodri.dto.Collaborator;
@@ -52,17 +53,19 @@ public class MarvelApiConnectionImpl implements MarvelApiConnection{
     @Override
     public List<Comic> getComicsInfo(Character hero) {
         log.info("getComicsInfo STARTED :::::");
+        ObjectMapper mapper = new ObjectMapper();
         url = this.generateURL("characters/"+hero.getId()+"/comics?");
         if(hero.getComicsNumber()<20){
-            MarvelApiResponseTemplate jsonResponse = restTemplate.getForObject(url,MarvelApiResponseTemplate.class);
-            Map<String,Object> data = (Map<String, Object>) jsonResponse.getData();
-            List<Map<String,Object>> results = (List<Map<String, Object>>) data.get("results");
         }else{
             MarvelApiResponseTemplate jsonResponse = restTemplate.getForObject(url,MarvelApiResponseTemplate.class);
-            List<Map<String,Object>> results = jsonResponse.getData().getResults();
-            List<Collection<Object>> ids = results.stream().filter(map -> map.containsKey("id")).map(Map::values).collect(Collectors.toList());
-            log.info("ids: "+ids);
-            ids.forEach(x -> log.info("ID: "+x));
+            DataResponseTemplate data = jsonResponse.getData();
+            Map<String,Object> creators = (Map<String, Object>) data.getResults().get(0).get("creators");
+            //AQUI ESTA EL ERROR
+            List<Collaborator> collaborators = (List<Collaborator>) mapper.convertValue(creators.get("items"),Collaborator.class);
+            for (Collaborator collab : collaborators) {
+                log.info("COLLABORATOR:: "+collab.getName());
+            }
+
 
         }
         log.info("getComicsInfo FINISHED :::::");
