@@ -1,5 +1,7 @@
 package marvel.albo.erirodri.dto;
 
+import java.util.List;
+
 /**
  * ---------------------------------------------------------------
  * @author Erick Rodriguez Morales
@@ -11,33 +13,32 @@ package marvel.albo.erirodri.dto;
  */
 public class Comic {
 
-    private int idComicDto;
-    private String nameComicDto;
+    private String character;
+    private List<String> comics;
+
 
     public Comic() {
     }
 
-    public int getIdComicDto() {
-        return idComicDto;
+    public String getCharacter() {
+        return character;
     }
 
-    public void setIdComicDto(int idComicDto) {
-        this.idComicDto = idComicDto;
+    public void setCharacter(String character) {
+        this.character = character;
     }
 
-    public String getNameComicDto() {
-        return nameComicDto;
+    public List<String> getComics() {
+        return comics;
     }
 
-    public void setNameComicDto(String nameComicDto) {
-        this.nameComicDto = nameComicDto;
+    public void setComics(List<String> comic) {
+        this.comics = comic;
     }
 
     @Override
     public String toString() {
-        return "Comic{" +
-                "idComicDto=" + idComicDto +
-                ", nameComicDto='" + nameComicDto + '\'' +
-                '}';
+        return "character='" + character +
+                ", comic=" + comics + '\'';
     }
 }

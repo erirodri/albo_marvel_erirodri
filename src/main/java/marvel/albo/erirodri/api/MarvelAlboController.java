@@ -2,6 +2,7 @@ package marvel.albo.erirodri.api;
 
 import marvel.albo.erirodri.dto.Character;
 import marvel.albo.erirodri.dto.Collaborator;
+import marvel.albo.erirodri.dto.Comic;
 import marvel.albo.erirodri.service.MarvelApiConnection;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -59,6 +60,22 @@ public class MarvelAlboController {
         List<Collaborator> collaboratorList = marvelApiConnection.getCollaboratorsByCharacter(ironMan);
         lhm = marvelApiConnection.orderCollaboratorsByRole(collaboratorList);
 
+        return new ResponseEntity<>(lhm,headerHttp, HttpStatus.OK);
+    }
+
+    @GetMapping("/characters/ironman")
+    public ResponseEntity<LinkedHashMap> getCharactersIronMan(){
+        LinkedHashMap lhm = new LinkedHashMap();
+        Character ironMan = marvelApiConnection.getCharacterInfo("name=Iron Man");
+        lhm = marvelApiConnection.getCharactersByComic(ironMan);
+        return new ResponseEntity<>(lhm,headerHttp, HttpStatus.OK);
+    }
+
+    @GetMapping("/characters/capamerica")
+    public ResponseEntity<LinkedHashMap> getCharactersCamAmerica(){
+        LinkedHashMap lhm = new LinkedHashMap();
+        Character ironMan = marvelApiConnection.getCharacterInfo("name=Captain America");
+        lhm = marvelApiConnection.getCharactersByComic(ironMan);
         return new ResponseEntity<>(lhm,headerHttp, HttpStatus.OK);
     }
 
