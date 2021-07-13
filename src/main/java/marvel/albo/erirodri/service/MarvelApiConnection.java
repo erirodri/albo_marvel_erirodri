@@ -5,13 +5,13 @@ import marvel.albo.erirodri.dto.Collaborator;
 import marvel.albo.erirodri.dto.Comic;
 
 import java.io.Serializable;
+import java.util.LinkedHashMap;
 import java.util.List;
+import java.util.Map;
 
 public interface MarvelApiConnection<T, ID extends Serializable> {
     Character getCharacterInfo(String hero);
-    List<Comic> getComicsInfo(Character hero);
-    List<Character> getCharactersByComic(Comic comic);
-    List<Collaborator> getCollaboratorsByComic(Comic comic);
-
+    List<Collaborator> getCollaboratorsByCharacter(Character hero);
+    LinkedHashMap orderCollaboratorsByRole(List<Collaborator> collaboratorList);
 
 }

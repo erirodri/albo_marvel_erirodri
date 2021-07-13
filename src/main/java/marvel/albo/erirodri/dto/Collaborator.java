@@ -1,5 +1,6 @@
 package marvel.albo.erirodri.dto;
 
+
 /**
  * ---------------------------------------------------------------
  * @author Erick Rodriguez Morales
@@ -9,21 +10,18 @@ package marvel.albo.erirodri.dto;
  * Dto Collaborator
  * --------------------------------------------------------------
  */
+
 public class Collaborator {
 
-    private String resourceURI;
     private String name;
     private String role;
 
     public Collaborator() {
     }
 
-    public String getResourceURI() {
-        return resourceURI;
-    }
-
-    public void setResourceURI(String resourceURI) {
-        this.resourceURI = resourceURI;
+    public void setCollaborator(String name, String role){
+        this.name=name;
+        this.role=role;
     }
 
     public String getName() {

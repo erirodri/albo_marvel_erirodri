@@ -1,7 +1,5 @@
 package marvel.albo.erirodri.dto;
 
-import java.util.List;
-import java.util.Map;
 
 /**
  * ---------------------------------------------------------------
@@ -46,12 +44,4 @@ public class Character {
         this.comicsNumber = comicsNumber;
     }
 
-    @Override
-    public String toString() {
-        return "Character{" +
-                "id=" + id +
-                ", name='" + name + '\'' +
-                ", comicsNumber=" + comicsNumber +
-                '}';
-    }
 }
