@@ -1,6 +1,5 @@
 package marvel.albo.erirodri.service;
 
-import com.mongodb.MongoCommandException;
 import com.mongodb.MongoException;
 import marvel.albo.erirodri.configuration.EnvVariables;
 import marvel.albo.erirodri.dao.MongoDAOCharacter;
@@ -16,6 +15,7 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
+import org.springframework.web.client.HttpStatusCodeException;
 import org.springframework.web.client.RestTemplate;
 
 import java.time.ZoneId;
@@ -50,12 +50,13 @@ public class MarvelApiConnectionImpl implements MarvelApiConnection{
     }
 
     @Override
-    public Character getCharacterInfo(String hero) {
+    public Character getCharacterInfo(String hero) throws HttpStatusCodeException{
         LOG.info("getCharacterInfo STARTED :::::");
 
         Character heroValue = new Character();
         url =  this.generateURL("characters?"+hero+"&");
         MarvelApiResponseTemplate jsonResponse = restTemplate.getForObject(url,MarvelApiResponseTemplate.class);
+        LOG.info("JSON Response CODE: "+jsonResponse.getCode());
         DataResponseTemplate data = jsonResponse.getData();
         heroValue.setId((Integer) data.getResults().get(0).get("id"));
         heroValue.setName((String) data.getResults().get(0).get("name"));
@@ -63,17 +64,18 @@ public class MarvelApiConnectionImpl implements MarvelApiConnection{
         heroValue.setComicsNumber((int) comics.get("available"));
         LOG.info("getCharacterInfo FINISHED :::::");
         return heroValue;
+
     }
 
     @Override
-    public List<Collaborator>  getCollaboratorsByCharacter(Character hero) {
+    public List<Collaborator>  getCollaboratorsByCharacter(Character hero) throws HttpStatusCodeException{
         LOG.info("getComicsInfo STARTED :::::");
         List<Collaborator> collaboratorsFiltered = new ArrayList<>();
         List<Collaborator> collaboratorList = new ArrayList<>();
         LOG.info("Comics to Search: "+hero.getComicsNumber());
         int restantes=hero.getComicsNumber();
         int offset = 0;
-         do{
+        do{
             DataResponseTemplate data = this.getComicsByPage(hero.getId(), offset);
             collaboratorList.addAll(this.getInfoCreatorsByComic(data));
             collaboratorsFiltered.addAll(collaboratorList.stream().filter(distinctByKey(dto -> dto.getName() + "" + dto.getRole())).collect(Collectors.toList()));
@@ -161,7 +163,7 @@ public class MarvelApiConnectionImpl implements MarvelApiConnection{
                 heroName,
                 (String) infoToSave.get("lastSync"),
                 infoToSave.get("Characters")
-                );
+        );
         charactersExist=mongoDAOCharacter.findAll();
         LOG.info("LISTA VACIA: "+(charactersExist.isEmpty())+" Size: "+charactersExist.size());
         if(!charactersExist.isEmpty()){
@@ -216,7 +218,7 @@ public class MarvelApiConnectionImpl implements MarvelApiConnection{
     }
 
 
-    private DataResponseTemplate getComicsByPage(int idHero, int offset){
+    private DataResponseTemplate getComicsByPage(int idHero, int offset) throws HttpStatusCodeException{
         url = this.generateURL("characters/"+idHero+"/comics?offset="+offset+"&limit=50&");
         MarvelApiResponseTemplate jsonResponse = restTemplate.getForObject(url,MarvelApiResponseTemplate.class);
         DataResponseTemplate data = jsonResponse.getData();
@@ -287,7 +289,7 @@ public class MarvelApiConnectionImpl implements MarvelApiConnection{
         String url=envVariables.getGateway()
                 .concat(elementToFind)
                 .concat(envVariables.getApiKey()).concat("&")
-                .concat(envVariables.getTs()).concat("&")
+                //.concat(envVariables.getTs()).concat("&")
                 .concat(envVariables.getHash());
         return url;
     }
