@@ -3,6 +3,7 @@ package marvel.albo.erirodri.service;
 import marvel.albo.erirodri.configuration.EnvVariables;
 import marvel.albo.erirodri.dto.Character;
 import marvel.albo.erirodri.dto.Collaborator;
+import marvel.albo.erirodri.dto.Comic;
 import marvel.albo.erirodri.model.DataResponseTemplate;
 import marvel.albo.erirodri.model.MarvelApiResponseTemplate;
 import org.slf4j.Logger;
@@ -42,7 +43,6 @@ public class MarvelApiConnectionImpl implements MarvelApiConnection{
         log.info("getCharacterInfo STARTED :::::");
 
         Character heroValue = new Character();
-
         url =  this.generateURL("characters?"+hero+"&");
         MarvelApiResponseTemplate jsonResponse = restTemplate.getForObject(url,MarvelApiResponseTemplate.class);
         DataResponseTemplate data = jsonResponse.getData();
@@ -50,7 +50,6 @@ public class MarvelApiConnectionImpl implements MarvelApiConnection{
         heroValue.setName((String) data.getResults().get(0).get("name"));
         Map<String,Object> comics = (Map<String, Object>) data.getResults().get(0).get("comics");
         heroValue.setComicsNumber((int) comics.get("available"));
-        log.info("# Comics: "+heroValue.getComicsNumber());
         log.info("getCharacterInfo FINISHED :::::");
         return heroValue;
     }
@@ -58,21 +57,60 @@ public class MarvelApiConnectionImpl implements MarvelApiConnection{
     @Override
     public List<Collaborator>  getCollaboratorsByCharacter(Character hero) {
         log.info("getComicsInfo STARTED :::::");
-        List<Collaborator> collaboratorsFiltered;
+        List<Collaborator> collaboratorsFiltered = new ArrayList<>();
         List<Collaborator> collaboratorList = new ArrayList<>();
         log.info("Comics to Search: "+hero.getComicsNumber());
         int restantes=hero.getComicsNumber();
         int offset = 0;
          do{
             log.info("AL INICIO:: offset #:" + offset + " Comics Restantes: " + restantes);
-            collaboratorList.addAll(this.getComicsByPage(hero.getId(), offset));
-            collaboratorsFiltered = collaboratorList.stream().filter(distinctByKey(dto -> dto.getName() + "" + dto.getRole())).collect(Collectors.toList());
+            DataResponseTemplate data = this.getComicsByPage(hero.getId(), offset);
+            collaboratorList.addAll(this.getInfoCreatorsByComic(data));
+            collaboratorsFiltered.addAll(collaboratorList.stream().filter(distinctByKey(dto -> dto.getName() + "" + dto.getRole())).collect(Collectors.toList()));
             offset += 50;
             restantes -=50;
-            log.info("AL FINAL:: offset #:" + offset + " Comics Restantes: " + restantes);
         }while(restantes>0);
         log.info("getComicsInfo FINISHED :::::");
         return collaboratorsFiltered;
+    }
+
+    @Override
+    public LinkedHashMap getCharactersByComic(Character hero) {
+        log.info("getCharactersByComic STARTED :::::");
+        LinkedHashMap result = new LinkedHashMap();
+        log.info("Comics to Search: "+hero.getComicsNumber());
+        List<Comic> comicsList;
+        List<Comic> comicListTotal=  new ArrayList<>();
+        int restantes=hero.getComicsNumber();
+        int offset = 0;
+        do{
+            log.info("AL INICIO:: offset #:" + offset + " Comics Restantes: " + restantes);
+            DataResponseTemplate data = this.getComicsByPage(hero.getId(), offset);
+            comicsList= this.getInfoCharactersByComic(data,hero.getName());
+            if(offset==0){
+                comicListTotal.addAll(comicsList);
+            }else{
+                for (Comic comic:comicsList ) {
+                    if(comicListTotal.stream().filter(val -> val.getCharacter().equalsIgnoreCase(comic.getCharacter())).findFirst().isPresent()){
+                        Comic comicExist = comicListTotal.stream().filter(val -> val.getCharacter().equalsIgnoreCase(comic.getCharacter())).findFirst().get();
+                        int i = comicListTotal.indexOf(comicExist);
+                        List<String> comic1 = new ArrayList<>(comicListTotal.get(i).getComics());
+                        comic1.addAll(comic.getComics());
+                        comic.setComics(comic1);
+                        comicListTotal.set(i,comic);
+                    }else{
+                        comicListTotal.add(comic);
+                    }
+                }
+            }
+            offset += 50;
+            restantes -=50;
+        }while (restantes>0);
+
+        result.put("lastSync",formattedString);
+        result.put("Characters",comicListTotal);
+        log.info("getCharactersByComic FINISHED :::::");
+        return result;
     }
 
     @Override
@@ -98,33 +136,74 @@ public class MarvelApiConnectionImpl implements MarvelApiConnection{
 
         result.put("lastSync",formattedString);
         result.put("writers",writers);
-        log.info("writers: "+writers.size());
         result.put("editors",editors);
-        log.info("editors: "+editors.size());
         result.put("colorists",drawers);
-        log.info("drawers: "+drawers.size());
 
         return result;
     }
 
 
-    private List<Collaborator> getComicsByPage(int idHero, int offset){
-        List<Collaborator> collaborators = new ArrayList<>();
+    private DataResponseTemplate getComicsByPage(int idHero, int offset){
         url = this.generateURL("characters/"+idHero+"/comics?offset="+offset+"&limit=50&");
         MarvelApiResponseTemplate jsonResponse = restTemplate.getForObject(url,MarvelApiResponseTemplate.class);
         DataResponseTemplate data = jsonResponse.getData();
 
+        return data;
+    }
+
+    private List<Collaborator> getInfoCreatorsByComic(DataResponseTemplate data){
+        List<Collaborator> collaboratorList = new ArrayList<>();
         for(int resultNumb=0;resultNumb<data.getResults().size();resultNumb++){
             Map<String,Object> creators = (Map<String, Object>) data.getResults().get(resultNumb).get("creators");
             List<Map<String,Object>> collaboratorToSearch = (List<Map<String,Object>>) creators.get("items");
             for (Map<String,Object> collaborator : collaboratorToSearch) {
                 Collaborator collaboratorDto = new Collaborator();
                 collaboratorDto.setCollaborator(collaborator.get("name").toString(),collaborator.get("role").toString());
-                collaborators.add(collaboratorDto);
+                collaboratorList.add(collaboratorDto);
+            }
+        }
+        return collaboratorList;
+    }
+
+    private List<Comic> getInfoCharactersByComic(DataResponseTemplate data, String heroName){
+        List<Comic> charactersList = new ArrayList<>();
+        for(int resultNumb=0;resultNumb<data.getResults().size();resultNumb++){
+            String comicName = (String) data.getResults().get(resultNumb).get("title");
+            Map<String,Object> creators = (Map<String, Object>) data.getResults().get(resultNumb).get("characters");
+            List<Map<String,Object>> characterToSearch = (List<Map<String,Object>>) creators.get("items");
+
+            for (Map<String,Object> character: characterToSearch) {
+                String nameHero = (String) character.get("name");
+                if(!nameHero.equals(heroName)){
+                    if(charactersList.size()==0){
+                        log.info(">> First Element");
+                        Comic charactersComic = new Comic();
+                        charactersComic.setCharacter(nameHero);
+                        charactersComic.setComics(Collections.singletonList(comicName));
+
+                        charactersList.add(charactersComic);
+                    }else{
+                        if(charactersList.stream().filter(value -> value.getCharacter().equalsIgnoreCase(nameHero)).findFirst().isPresent()){
+                            log.info(">> Existe: "+nameHero);
+                            Comic comicExist = charactersList.stream().filter(value -> value.getCharacter().equalsIgnoreCase(nameHero)).findFirst().get();
+                            int i = charactersList.indexOf(comicExist);
+                            List<String> value = new ArrayList<>(comicExist.getComics());
+                            value.add(comicName);
+                            comicExist.setComics(value);
+                            charactersList.set(i,comicExist);
+                        }else{
+                            log.info(">> NO Existe: "+character.get("name"));
+                            Comic charactersComic = new Comic();
+                            charactersComic.setCharacter(nameHero);
+                            charactersComic.setComics(Collections.singletonList(comicName));
+                            charactersList.add(charactersComic);
+                        }
+                    }
+                }
             }
         }
 
-        return collaborators;
+        return charactersList;
     }
 
     private static <T> Predicate<T> distinctByKey(Function<? super T, Object> keyExtractor) {

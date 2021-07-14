@@ -13,5 +13,5 @@ public interface MarvelApiConnection<T, ID extends Serializable> {
     Character getCharacterInfo(String hero);
     List<Collaborator> getCollaboratorsByCharacter(Character hero);
     LinkedHashMap orderCollaboratorsByRole(List<Collaborator> collaboratorList);
-
+    LinkedHashMap getCharactersByComic(Character hero);
 }
