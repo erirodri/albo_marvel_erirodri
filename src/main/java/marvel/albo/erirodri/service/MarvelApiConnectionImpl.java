@@ -1,9 +1,14 @@
 package marvel.albo.erirodri.service;
 
+import com.mongodb.MongoException;
 import marvel.albo.erirodri.configuration.EnvVariables;
+import marvel.albo.erirodri.dao.MongoDAOCharacter;
+import marvel.albo.erirodri.dao.MongoDAOCollaborator;
 import marvel.albo.erirodri.dto.Character;
 import marvel.albo.erirodri.dto.Collaborator;
 import marvel.albo.erirodri.dto.Comic;
+import marvel.albo.erirodri.model.Characters;
+import marvel.albo.erirodri.model.Collaborators;
 import marvel.albo.erirodri.model.DataResponseTemplate;
 import marvel.albo.erirodri.model.MarvelApiResponseTemplate;
 import org.slf4j.Logger;
@@ -30,12 +35,17 @@ public class MarvelApiConnectionImpl implements MarvelApiConnection{
     private static final ZonedDateTime zonedDateTimeNow = ZonedDateTime.now(ZoneId.of("America/Mexico_City"));
     private static final DateTimeFormatter formatter = DateTimeFormatter.ofPattern("dd/MM/yyyy HH:mm:ss");
     private static final String formattedString = zonedDateTimeNow.format(formatter);
+    private final MongoDAOCollaborator mongoDAOCollaborator;
+    private final MongoDAOCharacter mongoDAOCharacter;
+
 
     private String url;
 
     @Autowired
-    public MarvelApiConnectionImpl(EnvVariables envVariables) {
+    public MarvelApiConnectionImpl(EnvVariables envVariables, MongoDAOCollaborator mongoDAOCollaborator, MongoDAOCharacter mongoDAOCharacter) {
         this.envVariables = envVariables;
+        this.mongoDAOCollaborator = mongoDAOCollaborator;
+        this.mongoDAOCharacter = mongoDAOCharacter;
     }
 
     @Override
@@ -63,13 +73,12 @@ public class MarvelApiConnectionImpl implements MarvelApiConnection{
         int restantes=hero.getComicsNumber();
         int offset = 0;
          do{
-            log.info("AL INICIO:: offset #:" + offset + " Comics Restantes: " + restantes);
             DataResponseTemplate data = this.getComicsByPage(hero.getId(), offset);
             collaboratorList.addAll(this.getInfoCreatorsByComic(data));
             collaboratorsFiltered.addAll(collaboratorList.stream().filter(distinctByKey(dto -> dto.getName() + "" + dto.getRole())).collect(Collectors.toList()));
             offset += 50;
             restantes -=50;
-        }while(restantes>0);
+        }while(restantes>2400);
         log.info("getComicsInfo FINISHED :::::");
         return collaboratorsFiltered;
     }
@@ -84,7 +93,6 @@ public class MarvelApiConnectionImpl implements MarvelApiConnection{
         int restantes=hero.getComicsNumber();
         int offset = 0;
         do{
-            log.info("AL INICIO:: offset #:" + offset + " Comics Restantes: " + restantes);
             DataResponseTemplate data = this.getComicsByPage(hero.getId(), offset);
             comicsList= this.getInfoCharactersByComic(data,hero.getName());
             if(offset==0){
@@ -105,12 +113,72 @@ public class MarvelApiConnectionImpl implements MarvelApiConnection{
             }
             offset += 50;
             restantes -=50;
-        }while (restantes>0);
+        }while (restantes>2400);
 
         result.put("lastSync",formattedString);
         result.put("Characters",comicListTotal);
         log.info("getCharactersByComic FINISHED :::::");
         return result;
+    }
+
+    @Override
+    public void sendCollaboratorsResultToDataBase(LinkedHashMap infoToSave, String heroName) throws MongoException {
+        log.info(":::: sendCollaboratorsResultToDataBase STARTED ::::");
+        List<Collaborators> collaboratorsExist;
+        Collaborators collaborators = new Collaborators(
+                heroName,
+                (String) infoToSave.get("lastSync"),
+                infoToSave.get("writers"),
+                infoToSave.get("editors"),
+                infoToSave.get("colorists"));
+        collaboratorsExist=mongoDAOCollaborator.findAll();
+        log.info("LISTA VACIA: "+(collaboratorsExist.isEmpty()));
+        if(!collaboratorsExist.isEmpty()){
+            for (Collaborators collab: collaboratorsExist) {
+                log.info("Collab Name: "+collab.getHeroName()+" == "+heroName);
+                if(collab.getHeroName().equalsIgnoreCase(heroName)){
+                    log.info("DISTINCT: "+collab.getHeroName().equalsIgnoreCase(heroName));
+                    mongoDAOCollaborator.delete(collab);
+                    collaborators.set_Id(collab.get_Id());
+                    mongoDAOCollaborator.save(collaborators);
+                }
+            }
+        }
+        if(collaboratorsExist.size()<2){
+            mongoDAOCollaborator.save(collaborators);
+        }
+
+        log.info(":::: sendCollaboratorsResultToDataBase FINISHED ::::");
+    }
+
+    @Override
+    public void sendCharactersResultToDataBase(LinkedHashMap infoToSave, String heroName) throws MongoException{
+        log.info(":::: sendCharactersResultToDataBase STARTED ::::");
+        List<Characters> charactersExist;
+        Characters characters = new Characters(
+                heroName,
+                (String) infoToSave.get("lastSync"),
+                infoToSave.get("Characters")
+                );
+        charactersExist=mongoDAOCharacter.findAll();
+        log.info("LISTA VACIA: "+(charactersExist.isEmpty())+" Size: "+charactersExist.size());
+        if(!charactersExist.isEmpty()){
+            for (Characters charac: charactersExist) {
+                log.info("Collab Name: "+charac.getHeroName()+" == "+heroName);
+                if(charac.getHeroName().equalsIgnoreCase(heroName)){
+                    log.info("DISTINCT: "+charac.getHeroName().equalsIgnoreCase(heroName));
+                    mongoDAOCharacter.delete(charac);
+                    charac.set_Id(charac.get_Id());
+                    mongoDAOCharacter.save(characters);
+                }
+            }
+        }
+        if(charactersExist.size()<2){
+            log.info("FIRST TIME");
+            mongoDAOCharacter.save(characters);
+        }
+
+        log.info(":::: sendCharactersResultToDataBase FINISHED ::::");
     }
 
     @Override
@@ -176,7 +244,6 @@ public class MarvelApiConnectionImpl implements MarvelApiConnection{
                 String nameHero = (String) character.get("name");
                 if(!nameHero.equals(heroName)){
                     if(charactersList.size()==0){
-                        log.info(">> First Element");
                         Comic charactersComic = new Comic();
                         charactersComic.setCharacter(nameHero);
                         charactersComic.setComics(Collections.singletonList(comicName));
@@ -184,7 +251,6 @@ public class MarvelApiConnectionImpl implements MarvelApiConnection{
                         charactersList.add(charactersComic);
                     }else{
                         if(charactersList.stream().filter(value -> value.getCharacter().equalsIgnoreCase(nameHero)).findFirst().isPresent()){
-                            log.info(">> Existe: "+nameHero);
                             Comic comicExist = charactersList.stream().filter(value -> value.getCharacter().equalsIgnoreCase(nameHero)).findFirst().get();
                             int i = charactersList.indexOf(comicExist);
                             List<String> value = new ArrayList<>(comicExist.getComics());
@@ -192,7 +258,6 @@ public class MarvelApiConnectionImpl implements MarvelApiConnection{
                             comicExist.setComics(value);
                             charactersList.set(i,comicExist);
                         }else{
-                            log.info(">> NO Existe: "+character.get("name"));
                             Comic charactersComic = new Comic();
                             charactersComic.setCharacter(nameHero);
                             charactersComic.setComics(Collections.singletonList(comicName));

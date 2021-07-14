@@ -1,8 +1,8 @@
 package marvel.albo.erirodri.api;
 
+import com.mongodb.MongoException;
 import marvel.albo.erirodri.dto.Character;
 import marvel.albo.erirodri.dto.Collaborator;
-import marvel.albo.erirodri.dto.Comic;
 import marvel.albo.erirodri.service.MarvelApiConnection;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -29,6 +29,11 @@ import java.util.*;
 public class MarvelAlboController {
     private static HttpHeaders headerHttp = new HttpHeaders();
     private static final Logger log = LoggerFactory.getLogger(MarvelAlboController.class);
+    private static final String IRON_MAN="Iron Man";
+    private static final String CAP_AMER="Captain America";
+    private static final String IRON_MAN_URL="name=".concat(IRON_MAN);
+    private static final String CAP_AMER_URL="name=".concat(CAP_AMER);
+    private LinkedHashMap lhm = new LinkedHashMap();
 
 
     private final MarvelApiConnection marvelApiConnection;
@@ -39,44 +44,64 @@ public class MarvelAlboController {
 
     @GetMapping("/colaborators/ironman")
     public ResponseEntity<LinkedHashMap> getCollaboratorsIronMan(){
-        Map<String,Object> response = new HashMap<>();
-        LinkedHashMap lhm = new LinkedHashMap();
 
-        Character ironMan = marvelApiConnection.getCharacterInfo("name=Iron Man");
+        Character ironMan = marvelApiConnection.getCharacterInfo(IRON_MAN_URL);
         List<Collaborator> collaboratorList = marvelApiConnection.getCollaboratorsByCharacter(ironMan);
         lhm = marvelApiConnection.orderCollaboratorsByRole(collaboratorList);
-
-
-
+        try{
+            marvelApiConnection.sendCollaboratorsResultToDataBase(lhm,IRON_MAN);
+        }catch (MongoException ex){
+            lhm.put("ERROR MESSAGE: ", ex.getMessage());
+            return new ResponseEntity<>(lhm,headerHttp, HttpStatus.INTERNAL_SERVER_ERROR);
+        }
         return new ResponseEntity<>(lhm,headerHttp, HttpStatus.OK);
+
     }
 
     @GetMapping("/colaborators/capamerica")
     public ResponseEntity<LinkedHashMap> getCollaboratorsCapAmerica(){
-        Map<String,Object> response = new HashMap<>();
-        LinkedHashMap lhm = new LinkedHashMap();
 
-        Character ironMan = marvelApiConnection.getCharacterInfo("name=Captain America");
+        Character ironMan = marvelApiConnection.getCharacterInfo(CAP_AMER_URL);
         List<Collaborator> collaboratorList = marvelApiConnection.getCollaboratorsByCharacter(ironMan);
         lhm = marvelApiConnection.orderCollaboratorsByRole(collaboratorList);
-
+        try{
+            marvelApiConnection.sendCollaboratorsResultToDataBase(lhm,CAP_AMER);
+        }catch (MongoException ex){
+            lhm.put("ERROR MESSAGE: ", ex.getMessage());
+            return new ResponseEntity<>(lhm,headerHttp, HttpStatus.INTERNAL_SERVER_ERROR);
+        }
         return new ResponseEntity<>(lhm,headerHttp, HttpStatus.OK);
+
     }
 
     @GetMapping("/characters/ironman")
     public ResponseEntity<LinkedHashMap> getCharactersIronMan(){
-        LinkedHashMap lhm = new LinkedHashMap();
-        Character ironMan = marvelApiConnection.getCharacterInfo("name=Iron Man");
+
+        Character ironMan = marvelApiConnection.getCharacterInfo(IRON_MAN_URL);
         lhm = marvelApiConnection.getCharactersByComic(ironMan);
+        try{
+            marvelApiConnection.sendCharactersResultToDataBase(lhm,IRON_MAN);
+        }catch (MongoException ex){
+            lhm.put("ERROR MESSAGE: ", ex.getMessage());
+            return new ResponseEntity<>(lhm,headerHttp, HttpStatus.INTERNAL_SERVER_ERROR);
+        }
         return new ResponseEntity<>(lhm,headerHttp, HttpStatus.OK);
+
     }
 
     @GetMapping("/characters/capamerica")
     public ResponseEntity<LinkedHashMap> getCharactersCamAmerica(){
-        LinkedHashMap lhm = new LinkedHashMap();
-        Character ironMan = marvelApiConnection.getCharacterInfo("name=Captain America");
-        lhm = marvelApiConnection.getCharactersByComic(ironMan);
+
+        Character capAmerica = marvelApiConnection.getCharacterInfo(CAP_AMER_URL);
+        lhm = marvelApiConnection.getCharactersByComic(capAmerica);
+        try{
+            marvelApiConnection.sendCharactersResultToDataBase(lhm,CAP_AMER);
+        }catch (MongoException ex){
+            lhm.put("ERROR MESSAGE: ", ex.getMessage());
+            return new ResponseEntity<>(lhm,headerHttp, HttpStatus.INTERNAL_SERVER_ERROR);
+        }
         return new ResponseEntity<>(lhm,headerHttp, HttpStatus.OK);
+
     }
 
 }
