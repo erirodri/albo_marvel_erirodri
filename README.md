@@ -87,8 +87,8 @@ Cabe mencionar que existen algunos “Code Smells” que hacen referencia al uso
 1. Descargar el proyecto
 
 ```bash 
-  git clone https://github.com/erirodri/meli-erirodri.git
-  > cd meli-erirodri
+  git clone https://github.com/erirodri/albo_marvel_erirodri.git
+  > cd albo_marvel_erirodri
 ```
 2. Para poder ejecutar el proyecto es necesario contar con (link para instalar):
 - [Maven](https://maven.apache.org/install.html)
