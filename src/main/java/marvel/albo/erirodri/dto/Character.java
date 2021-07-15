@@ -4,7 +4,7 @@ package marvel.albo.erirodri.dto;
 /**
  * ---------------------------------------------------------------
  * @author Erick Rodriguez Morales
- * @version
+ * @version 1.0.0
  * @category DTO
  *
  * Dto Character
@@ -18,6 +18,7 @@ public class Character {
     private int comicsNumber;
 
     public Character() {
+        // Constructor ...
     }
 
     public int getId() {

@@ -3,6 +3,15 @@ package marvel.albo.erirodri.model;
 import java.util.List;
 import java.util.Map;
 
+/**
+ * ---------------------------------------------------------------
+ * @author Erick Rodriguez Morales
+ * @version 1.0.1
+ * @category model
+ *
+ * Model to collect data response from API Marvel
+ * --------------------------------------------------------------
+ */
 public class DataResponseTemplate {
 
     private int offset;
@@ -12,6 +21,7 @@ public class DataResponseTemplate {
     private List<Map<String,Object>> results;
 
     public DataResponseTemplate() {
+        // Constructor ...
     }
 
     public int getOffset() {

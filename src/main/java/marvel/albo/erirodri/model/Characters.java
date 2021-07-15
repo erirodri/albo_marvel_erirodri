@@ -1,68 +1,75 @@
 package marvel.albo.erirodri.model;
 
-import marvel.albo.erirodri.dto.Comic;
 import org.bson.types.ObjectId;
 import org.springframework.data.annotation.Id;
 import org.springframework.data.mongodb.core.mapping.Document;
 
-import java.util.ArrayList;
-
+/**
+ * ---------------------------------------------------------------
+ * @author Erick Rodriguez Morales
+ * @version 1.0.1
+ * @category model
+ *
+ * Model to collect info related to Characters
+ * --------------------------------------------------------------
+ */
 @Document(collection = "characters")
 public class Characters {
     @Id
     private ObjectId _Id;
-    private String heroName;
-    private String lastSync;
-    private Object characters;
+    private String heroNameCharact;
+    private String lastSyncCharact;
+    private Object charactersInfo;
 
     public Characters() {
+        // Constructor ...
     }
 
-    public Characters(String heroName, String lastSync, Object characters) {
-        this.heroName = heroName;
-        this.lastSync = lastSync;
-        this.characters = characters;
+    public Characters(String heroName, String lastSync, Object charactersInfo) {
+        this.heroNameCharact = heroName;
+        this.lastSyncCharact = lastSync;
+        this.charactersInfo = charactersInfo;
     }
 
-    public ObjectId get_Id() {
+    public ObjectId getId() {
         return _Id;
     }
 
-    public void set_Id(ObjectId _Id) {
+    public void setId(ObjectId _Id) {
         this._Id = _Id;
     }
 
-    public String getHeroName() {
-        return heroName;
+    public String getHeroNameCharact() {
+        return heroNameCharact;
     }
 
-    public void setHeroName(String heroName) {
-        this.heroName = heroName;
+    public void setHeroNameCharact(String heroNameCharact) {
+        this.heroNameCharact = heroNameCharact;
     }
 
-    public String getLastSync() {
-        return lastSync;
+    public String getLastSyncCharact() {
+        return lastSyncCharact;
     }
 
-    public void setLastSync(String lastSync) {
-        this.lastSync = lastSync;
+    public void setLastSyncCharact(String lastSyncCharact) {
+        this.lastSyncCharact = lastSyncCharact;
     }
 
     public Object getCharacters() {
-        return characters;
+        return charactersInfo;
     }
 
     public void setCharacters(Object characters) {
-        this.characters = characters;
+        this.charactersInfo = characters;
     }
 
     @Override
     public String toString() {
         return "Characters{" +
                 "_Id=" + _Id +
-                ", heroName='" + heroName + '\'' +
-                ", lastSync='" + lastSync + '\'' +
-                ", characters=" + characters +
+                ", heroName='" + heroNameCharact + '\'' +
+                ", lastSync='" + lastSyncCharact + '\'' +
+                ", characters=" + charactersInfo +
                 '}';
     }
 }

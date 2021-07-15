@@ -4,7 +4,7 @@ package marvel.albo.erirodri.dto;
 /**
  * ---------------------------------------------------------------
  * @author Erick Rodriguez Morales
- * @version
+ * @version 1.0.0
  * @category DTO
  *
  * Dto Collaborator
@@ -17,6 +17,7 @@ public class Collaborator {
     private String role;
 
     public Collaborator() {
+        // Constructor ...
     }
 
     public void setCollaborator(String name, String role){
