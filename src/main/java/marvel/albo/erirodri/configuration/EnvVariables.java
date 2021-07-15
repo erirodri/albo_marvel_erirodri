@@ -3,6 +3,15 @@ package marvel.albo.erirodri.configuration;
 import org.springframework.boot.context.properties.ConfigurationProperties;
 import org.springframework.context.annotation.Configuration;
 
+/**
+ * ---------------------------------------------------------------
+ * @author Erick Rodriguez Morales
+ * @version 1.0.0
+ * @category configuration
+ *
+ * Class to have access to .properties variables
+ * --------------------------------------------------------------
+ */
 @ConfigurationProperties(prefix="marvel.api")
 @Configuration
 public class EnvVariables {
@@ -12,6 +21,7 @@ public class EnvVariables {
     private String hash;
 
     public EnvVariables() {
+        // Environment Variables
     }
 
     public String getGateway() {

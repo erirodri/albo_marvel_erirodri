@@ -6,6 +6,7 @@ import marvel.albo.erirodri.dto.Collaborator;
 import marvel.albo.erirodri.service.MarvelApiConnection;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpHeaders;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
@@ -20,7 +21,7 @@ import java.util.*;
 /**
  * ---------------------------------------------------------------
  * @author Erick Rodriguez Morales
- * @version
+ * @version 1.0.0
  * @category Controller
  *
  * --------------------------------------------------------------
@@ -34,19 +35,24 @@ public class MarvelAlboController {
     private static final String CAP_AMER="Captain America";
     private static final String IRON_MAN_URL="name=".concat(IRON_MAN);
     private static final String CAP_AMER_URL="name=".concat(CAP_AMER);
-    private LinkedHashMap lhm = new LinkedHashMap();
+    private static final String ERROR_MESSAGE="ERROR MESSAGE";
+    private static final String ERROR_CODE="ERROR CODE";
+    private static final String CAUSE="CAUSE";
+
+    private LinkedHashMap<String,Object> lhm = new LinkedHashMap<>();
 
 
     private final MarvelApiConnection marvelApiConnection;
 
+    @Autowired
     public MarvelAlboController(MarvelApiConnection marvelApiConnection) {
         this.marvelApiConnection = marvelApiConnection;
     }
 
     @GetMapping("/colaborators/ironman")
-    public ResponseEntity<LinkedHashMap> getCollaboratorsIronMan(){
-        LOG.info(" ");
-        LOG.info("*:*:* GET_COLLABORATORS_IRON_MAN -- STARTED *:*:* ");
+    public ResponseEntity<LinkedHashMap<String,Object>> getCollaboratorsIronMan(){
+        LOG.debug(" ");
+        LOG.debug("*:*:* GET_COLLABORATORS_IRON_MAN -- STARTED *:*:* ");
 
 
         try{
@@ -55,81 +61,81 @@ public class MarvelAlboController {
             lhm = marvelApiConnection.orderCollaboratorsByRole(collaboratorList);
             marvelApiConnection.sendCollaboratorsResultToDataBase(lhm,IRON_MAN);
         }catch (MongoException ex){
-            lhm.put("ERROR MESSAGE: ", ex.getMessage());
+            lhm.put(ERROR_MESSAGE, ex.getMessage());
             return new ResponseEntity<>(lhm,headerHttp, HttpStatus.INTERNAL_SERVER_ERROR);
         }catch (HttpStatusCodeException ex){
-            lhm.put("ERROR CODE: ", ex.getStatusCode().value());
-            lhm.put("CAUSE",ex.getResponseBodyAsString());
+            lhm.put(ERROR_CODE, ex.getStatusCode().value());
+            lhm.put(CAUSE,ex.getResponseBodyAsString());
             return new ResponseEntity<>(lhm,headerHttp, HttpStatus.FAILED_DEPENDENCY);
         }
-        LOG.info("*:*:* GET_COLLABORATORS_IRON_MAN -- FINISHED *:*:* ");
+        LOG.debug("*:*:* GET_COLLABORATORS_IRON_MAN -- FINISHED *:*:* ");
         return new ResponseEntity<>(lhm,headerHttp, HttpStatus.OK);
 
     }
 
     @GetMapping("/colaborators/capamerica")
-    public ResponseEntity<LinkedHashMap> getCollaboratorsCapAmerica(){
-        LOG.info(" ");
-        LOG.info("*:*:* GET_COLLABORATORS_CAP_AME -- STARTED *:*:* ");
+    public ResponseEntity<LinkedHashMap<String,Object>> getCollaboratorsCapAmerica(){
+        LOG.debug(" ");
+        LOG.debug("*:*:* GET_COLLABORATORS_CAP_AME -- STARTED *:*:* ");
 
         try{
-            marvelApiConnection.sendCollaboratorsResultToDataBase(lhm,CAP_AMER);
             Character ironMan = marvelApiConnection.getCharacterInfo(CAP_AMER_URL);
             List<Collaborator> collaboratorList = marvelApiConnection.getCollaboratorsByCharacter(ironMan);
             lhm = marvelApiConnection.orderCollaboratorsByRole(collaboratorList);
+            marvelApiConnection.sendCollaboratorsResultToDataBase(lhm,CAP_AMER);
         }catch (MongoException ex){
-            lhm.put("ERROR MESSAGE: ", ex.getMessage());
+            lhm.put(ERROR_MESSAGE, ex.getMessage());
             return new ResponseEntity<>(lhm,headerHttp, HttpStatus.INTERNAL_SERVER_ERROR);
         }catch (HttpStatusCodeException ex){
-            lhm.put("ERROR CODE: ", ex.getStatusCode().value());
-            lhm.put("CAUSE",ex.getResponseBodyAsString());
+            lhm.put(ERROR_CODE, ex.getStatusCode().value());
+            lhm.put(CAUSE,ex.getResponseBodyAsString());
             return new ResponseEntity<>(lhm,headerHttp, HttpStatus.FAILED_DEPENDENCY);
         }
-        LOG.info("*:*:* GET_COLLABORATORS_CAP_AME -- FINISHED *:*:* ");
+        LOG.debug("*:*:* GET_COLLABORATORS_CAP_AME -- FINISHED *:*:* ");
         return new ResponseEntity<>(lhm,headerHttp, HttpStatus.OK);
 
     }
 
     @GetMapping("/characters/ironman")
-    public ResponseEntity<LinkedHashMap> getCharactersIronMan(){
-        LOG.info(" ");
-        LOG.info("*:*:* GET_CHARACTERS_IRON_MAN -- STARTED *:*:* ");
+    public ResponseEntity<LinkedHashMap<String,Object>> getCharactersIronMan(){
+        LOG.debug(" ");
+        LOG.debug("*:*:* GET_CHARACTERS_IRON_MAN -- STARTED *:*:* ");
 
         try{
             Character ironMan = marvelApiConnection.getCharacterInfo(IRON_MAN_URL);
             lhm = marvelApiConnection.getCharactersByComic(ironMan);
             marvelApiConnection.sendCharactersResultToDataBase(lhm,IRON_MAN);
         }catch (MongoException ex){
-            lhm.put("ERROR MESSAGE: ", ex.getMessage());
+            lhm.put(ERROR_MESSAGE, ex.getMessage());
             return new ResponseEntity<>(lhm,headerHttp, HttpStatus.INTERNAL_SERVER_ERROR);
         }catch (HttpStatusCodeException ex){
-            lhm.put("ERROR CODE: ", ex.getStatusCode().value());
-            lhm.put("CAUSE",ex.getResponseBodyAsString());
+            lhm.put(ERROR_CODE, ex.getStatusCode().value());
+            lhm.put(CAUSE,ex.getResponseBodyAsString());
             return new ResponseEntity<>(lhm,headerHttp, HttpStatus.FAILED_DEPENDENCY);
         }
-        LOG.info("*:*:* GET_CHARACTERS_IRON_MAN -- FINISHED *:*:* ");
+        LOG.debug("*:*:* GET_CHARACTERS_IRON_MAN -- FINISHED *:*:* ");
         return new ResponseEntity<>(lhm,headerHttp, HttpStatus.OK);
 
     }
 
     @GetMapping("/characters/capamerica")
-    public ResponseEntity<LinkedHashMap> getCharactersCamAmerica(){
-        LOG.info(" ");
-        LOG.info("*:*:* GET_CHARACTERS_CAP_AME -- STARTED *:*:* ");
+    public ResponseEntity<LinkedHashMap<String,Object>> getCharactersCamAmerica(){
+        LOG.debug(" ");
+        LOG.debug("*:*:* GET_CHARACTERS_CAP_AME -- STARTED *:*:* ");
 
         try{
             Character capAmerica = marvelApiConnection.getCharacterInfo(CAP_AMER_URL);
             lhm = marvelApiConnection.getCharactersByComic(capAmerica);
             marvelApiConnection.sendCharactersResultToDataBase(lhm,CAP_AMER);
         }catch (MongoException ex){
-            lhm.put("ERROR MESSAGE: ", ex.getMessage());
+            lhm.put(ERROR_MESSAGE, ex.getMessage());
             return new ResponseEntity<>(lhm,headerHttp, HttpStatus.INTERNAL_SERVER_ERROR);
         }catch (HttpStatusCodeException ex){
-            lhm.put("ERROR CODE: ", ex.getStatusCode().value());
-            lhm.put("CAUSE",ex.getResponseBodyAsString());
+            lhm.put(ERROR_CODE, ex.getStatusCode().value());
+            lhm.put(CAUSE,ex.getResponseBodyAsString());
             return new ResponseEntity<>(lhm,headerHttp, HttpStatus.FAILED_DEPENDENCY);
         }
-        LOG.info("*:*:* GET_CHARACTERS_CAP_AME -- FINISHED *:*:* ");
+        LOG.debug("*:*:* GET_CHARACTERS_CAP_AME -- FINISHED *:*:* ");
         return new ResponseEntity<>(lhm,headerHttp, HttpStatus.OK);
 
     }

@@ -2,6 +2,15 @@ package marvel.albo.erirodri.model;
 
 import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
 
+/**
+ * ---------------------------------------------------------------
+ * @author Erick Rodriguez Morales
+ * @version 1.0.0
+ * @category model
+ *
+ * Model to collect data response from API Marvel
+ * --------------------------------------------------------------
+ */
 @JsonIgnoreProperties(ignoreUnknown = true)
 public class MarvelApiResponseTemplate {
     private int code;
@@ -13,6 +22,7 @@ public class MarvelApiResponseTemplate {
     private DataResponseTemplate data;
 
     public MarvelApiResponseTemplate() {
+        // Constructor ...
     }
 
     public int getCode() {

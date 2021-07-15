@@ -8,10 +8,10 @@ import org.springframework.data.mongodb.repository.MongoRepository;
 /**
  * ---------------------------------------------------------------
  * @author Erick Rodriguez Morales
- * @version 1.0.1
+ * @version 1.0.0
  * @category DAO
  *
- * Dao MongoDb
+ * Dao MongoDb to manage Collaborators
  * --------------------------------------------------------------
  */
 public interface MongoDAOCollaborator extends MongoRepository<Collaborators,Long> {

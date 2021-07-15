@@ -5,49 +5,59 @@ import org.springframework.data.annotation.Id;
 import org.springframework.data.mongodb.core.mapping.Document;
 
 
+/**
+ * ---------------------------------------------------------------
+ * @author Erick Rodriguez Morales
+ * @version 1.0.1
+ * @category model
+ *
+ * Model to collect info related to Collaborators
+ * --------------------------------------------------------------
+ */
 @Document(collection = "collaborators")
 public class Collaborators {
     @Id
     private ObjectId _Id;
-    private String heroName;
-    private String lastSync;
+    private String heroNameCollab;
+    private String lastSyncCollab;
     private Object writers;
     private Object editors;
     private Object colorists;
 
     public Collaborators() {
+        // Constructor ...
     }
 
     public Collaborators(String heroName,String lastSync, Object writers, Object editors, Object colorists) {
-        this.heroName=heroName;
-        this.lastSync = lastSync;
+        this.heroNameCollab =heroName;
+        this.lastSyncCollab = lastSync;
         this.writers = writers;
         this.editors = editors;
         this.colorists = colorists;
     }
 
-    public ObjectId get_Id() {
+    public ObjectId getId() {
         return _Id;
     }
 
-    public void set_Id(ObjectId _Id) {
+    public void setId(ObjectId _Id) {
         this._Id = _Id;
     }
 
-    public String getHeroName() {
-        return heroName;
+    public String getHeroNameCollab() {
+        return heroNameCollab;
     }
 
-    public void setHeroName(String heroName) {
-        this.heroName = heroName;
+    public void setHeroNameCollab(String heroNameCollab) {
+        this.heroNameCollab = heroNameCollab;
     }
 
-    public String getLastSync() {
-        return lastSync;
+    public String getLastSyncCollab() {
+        return lastSyncCollab;
     }
 
-    public void setLastSync(String lastSync) {
-        this.lastSync = lastSync;
+    public void setLastSyncCollab(String lastSyncCollab) {
+        this.lastSyncCollab = lastSyncCollab;
     }
 
     public Object getWriters() {
@@ -78,7 +88,7 @@ public class Collaborators {
     public String toString() {
         return "Collaborators{" +
                 "_Id=" + _Id +
-                ", lastSync='" + lastSync + '\'' +
+                ", lastSync='" + lastSyncCollab + '\'' +
                 ", writers=" + writers +
                 ", editors=" + editors +
                 ", colorists=" + colorists +

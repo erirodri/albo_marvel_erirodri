@@ -18,8 +18,7 @@ import org.springframework.stereotype.Service;
 import org.springframework.web.client.HttpStatusCodeException;
 import org.springframework.web.client.RestTemplate;
 
-import java.time.ZoneId;
-import java.time.ZonedDateTime;
+import java.time.LocalDateTime;
 import java.time.format.DateTimeFormatter;
 import java.util.*;
 import java.util.concurrent.ConcurrentHashMap;
@@ -27,15 +26,24 @@ import java.util.function.Function;
 import java.util.function.Predicate;
 import java.util.stream.Collectors;
 
+
+/**
+ * ---------------------------------------------------------------
+ * @author Erick Rodriguez Morales
+ * @version 1.0.0
+ * @category Service
+ *
+ * Service to develop to business logical
+ * --------------------------------------------------------------
+ */
 @Service
 public class MarvelApiConnectionImpl implements MarvelApiConnection{
 
     private static final Logger LOG = LoggerFactory.getLogger(MarvelApiConnectionImpl.class);
     private final EnvVariables envVariables;
     private final RestTemplate restTemplate = new RestTemplate();
-    private static final ZonedDateTime ZONED_DATE_TIME_NOW = ZonedDateTime.now(ZoneId.of("America/Mexico_City"));
     private static final DateTimeFormatter FORMATTER = DateTimeFormatter.ofPattern("dd/MM/yyyy HH:mm:ss");
-    private static final String FORMATTED_STRING = ZONED_DATE_TIME_NOW.format(FORMATTER);
+    private static final String LAST_SYNC="lastSync";
     private final MongoDAOCollaborator mongoDAOCollaborator;
     private final MongoDAOCharacter mongoDAOCharacter;
 
@@ -51,28 +59,30 @@ public class MarvelApiConnectionImpl implements MarvelApiConnection{
 
     @Override
     public Character getCharacterInfo(String hero) throws HttpStatusCodeException{
-        LOG.info("getCharacterInfo STARTED :::::");
+        LOG.debug("getCharacterInfo STARTED :::::");
 
         Character heroValue = new Character();
+        DataResponseTemplate data;
         url =  this.generateURL("characters?"+hero+"&");
-        MarvelApiResponseTemplate jsonResponse = restTemplate.getForObject(url,MarvelApiResponseTemplate.class);
-        LOG.info("JSON Response CODE: "+jsonResponse.getCode());
-        DataResponseTemplate data = jsonResponse.getData();
-        heroValue.setId((Integer) data.getResults().get(0).get("id"));
-        heroValue.setName((String) data.getResults().get(0).get("name"));
-        Map<String,Object> comics = (Map<String, Object>) data.getResults().get(0).get("comics");
-        heroValue.setComicsNumber((int) comics.get("available"));
-        LOG.info("getCharacterInfo FINISHED :::::");
+        if(restTemplate.getForObject(url,MarvelApiResponseTemplate.class)!= null){
+            MarvelApiResponseTemplate jsonResponse = restTemplate.getForObject(url,MarvelApiResponseTemplate.class);
+            data = jsonResponse.getData();
+            heroValue.setId((Integer) data.getResults().get(0).get("id"));
+            heroValue.setName((String) data.getResults().get(0).get("name"));
+            Map<String,Object> comics = (Map<String, Object>) data.getResults().get(0).get("comics");
+            heroValue.setComicsNumber((int) comics.get("available"));
+        }
+
+        LOG.debug("getCharacterInfo FINISHED :::::");
         return heroValue;
 
     }
 
     @Override
     public List<Collaborator>  getCollaboratorsByCharacter(Character hero) throws HttpStatusCodeException{
-        LOG.info("getComicsInfo STARTED :::::");
+        LOG.debug("getComicsInfo STARTED :::::");
         List<Collaborator> collaboratorsFiltered = new ArrayList<>();
         List<Collaborator> collaboratorList = new ArrayList<>();
-        LOG.info("Comics to Search: "+hero.getComicsNumber());
         int restantes=hero.getComicsNumber();
         int offset = 0;
         do{
@@ -81,16 +91,17 @@ public class MarvelApiConnectionImpl implements MarvelApiConnection{
             collaboratorsFiltered.addAll(collaboratorList.stream().filter(distinctByKey(dto -> dto.getName() + "" + dto.getRole())).collect(Collectors.toList()));
             offset += 50;
             restantes -=50;
-        }while(restantes>2400);
-        LOG.info("getComicsInfo FINISHED :::::");
+        }while(restantes>0);
+        LOG.debug("getComicsInfo FINISHED :::::");
         return collaboratorsFiltered;
     }
 
     @Override
-    public LinkedHashMap getCharactersByComic(Character hero) {
-        LOG.info("getCharactersByComic STARTED :::::");
-        LinkedHashMap result = new LinkedHashMap();
-        LOG.info("Comics to Search: "+hero.getComicsNumber());
+    public LinkedHashMap<String,Object> getCharactersByComic(Character hero) {
+        LOG.debug("getCharactersByComic STARTED :::::");
+        LinkedHashMap<String,Object> result = new LinkedHashMap<>();
+        LocalDateTime now = LocalDateTime.now();
+        String lastSyncFormat = FORMATTER.format(now);
         List<Comic> comicsList;
         List<Comic> comicListTotal=  new ArrayList<>();
         int restantes=hero.getComicsNumber();
@@ -116,34 +127,30 @@ public class MarvelApiConnectionImpl implements MarvelApiConnection{
             }
             offset += 50;
             restantes -=50;
-        }while (restantes>2400);
+        }while (restantes>0);
 
-        LOG.info("lastSync: "+ FORMATTED_STRING);
-        result.put("lastSync", FORMATTED_STRING);
+        result.put(LAST_SYNC, lastSyncFormat);
         result.put("Characters",comicListTotal);
-        LOG.info("getCharactersByComic FINISHED :::::");
+        LOG.debug("getCharactersByComic FINISHED :::::");
         return result;
     }
 
     @Override
-    public void sendCollaboratorsResultToDataBase(LinkedHashMap infoToSave, String heroName) throws MongoException {
-        LOG.info(":::: sendCollaboratorsResultToDataBase STARTED ::::");
+    public void sendCollaboratorsResultToDataBase(LinkedHashMap<String,Object> infoToSave, String heroName) throws MongoException {
+        LOG.debug(":::: sendCollaboratorsResultToDataBase STARTED ::::");
         List<Collaborators> collaboratorsExist;
         Collaborators collaborators = new Collaborators(
                 heroName,
-                (String) infoToSave.get("lastSync"),
+                (String) infoToSave.get(LAST_SYNC),
                 infoToSave.get("writers"),
                 infoToSave.get("editors"),
                 infoToSave.get("colorists"));
         collaboratorsExist=mongoDAOCollaborator.findAll();
-        LOG.info("LISTA VACIA: "+(collaboratorsExist.isEmpty()));
-        if(!collaboratorsExist.isEmpty()){
+        if(!(collaboratorsExist.isEmpty())){
             for (Collaborators collab: collaboratorsExist) {
-                LOG.info("Collab Name: "+collab.getHeroName()+" == "+heroName);
-                if(collab.getHeroName().equalsIgnoreCase(heroName)){
-                    LOG.info("DISTINCT: "+collab.getHeroName().equalsIgnoreCase(heroName));
+                if(collab.getHeroNameCollab().equalsIgnoreCase(heroName)){
                     mongoDAOCollaborator.delete(collab);
-                    collaborators.set_Id(collab.get_Id());
+                    collaborators.setId(collab.getId());
                     mongoDAOCollaborator.save(collaborators);
                 }
             }
@@ -152,44 +159,40 @@ public class MarvelApiConnectionImpl implements MarvelApiConnection{
             mongoDAOCollaborator.save(collaborators);
         }
 
-        LOG.info(":::: sendCollaboratorsResultToDataBase FINISHED ::::");
+        LOG.debug(":::: sendCollaboratorsResultToDataBase FINISHED ::::");
     }
 
     @Override
-    public void sendCharactersResultToDataBase(LinkedHashMap infoToSave, String heroName) throws MongoException {
-        LOG.info(":::: sendCharactersResultToDataBase STARTED ::::");
+    public void sendCharactersResultToDataBase(LinkedHashMap<String,Object> infoToSave, String heroName) throws MongoException {
+        LOG.debug(":::: sendCharactersResultToDataBase STARTED ::::");
         List<Characters> charactersExist;
         Characters characters = new Characters(
                 heroName,
-                (String) infoToSave.get("lastSync"),
+                (String) infoToSave.get(LAST_SYNC),
                 infoToSave.get("Characters")
         );
         charactersExist=mongoDAOCharacter.findAll();
-        LOG.info("LISTA VACIA: "+(charactersExist.isEmpty())+" Size: "+charactersExist.size());
         if(!charactersExist.isEmpty()){
             for (Characters charac: charactersExist) {
-                LOG.info("Collab Name: "+charac.getHeroName()+" == "+heroName);
-                if(charac.getHeroName().equalsIgnoreCase(heroName)){
-                    LOG.info("DISTINCT: "+charac.getHeroName().equalsIgnoreCase(heroName));
+                if(charac.getHeroNameCharact().equalsIgnoreCase(heroName)){
                     mongoDAOCharacter.delete(charac);
-                    charac.set_Id(charac.get_Id());
+                    characters.setId(charac.getId());
                     mongoDAOCharacter.save(characters);
                 }
             }
         }
         if(charactersExist.size()<2){
-            LOG.info("FIRST TIME");
             mongoDAOCharacter.save(characters);
         }
 
-        LOG.info(":::: sendCharactersResultToDataBase FINISHED ::::");
+        LOG.debug(":::: sendCharactersResultToDataBase FINISHED ::::");
     }
 
     @Override
-    public LinkedHashMap orderCollaboratorsByRole(List list) {
-        LOG.info(":::: orderCollaboratorsByRole STARTED ::::");
+    public LinkedHashMap<String,Object> orderCollaboratorsByRole(List list) {
+        LOG.debug(":::: orderCollaboratorsByRole STARTED ::::");
         List<Collaborator> collaboratorList = list;
-        LinkedHashMap result = new LinkedHashMap();
+        LinkedHashMap<String,Object> result = new LinkedHashMap<>();
         List<String> editors = new ArrayList<>();
         List<String> writers = new ArrayList<>();
         List<String> drawers = new ArrayList<>();
@@ -204,24 +207,32 @@ public class MarvelApiConnectionImpl implements MarvelApiConnection{
                 case "editor":
                     editors.add(collaborator.getName());
                     break;
+                default:
+                    break;
             }
         }
 
-        LOG.info("lastSync: "+ FORMATTED_STRING);
-        result.put("lastSync", FORMATTED_STRING);
+        LocalDateTime now = LocalDateTime.now();
+        String lastSyncFormat = FORMATTER.format(now);
+        result.put(LAST_SYNC, lastSyncFormat);
         result.put("writers",writers);
         result.put("editors",editors);
         result.put("colorists",drawers);
 
-        LOG.info(":::: orderCollaboratorsByRole FINISHED ::::");
+        LOG.debug(":::: orderCollaboratorsByRole FINISHED ::::");
         return result;
     }
 
 
     private DataResponseTemplate getComicsByPage(int idHero, int offset) throws HttpStatusCodeException{
         url = this.generateURL("characters/"+idHero+"/comics?offset="+offset+"&limit=50&");
-        MarvelApiResponseTemplate jsonResponse = restTemplate.getForObject(url,MarvelApiResponseTemplate.class);
-        DataResponseTemplate data = jsonResponse.getData();
+        DataResponseTemplate data = new DataResponseTemplate();
+        if (restTemplate.getForObject(url,MarvelApiResponseTemplate.class) != null) {
+            MarvelApiResponseTemplate jsonResponse = restTemplate.getForObject(url,MarvelApiResponseTemplate.class);
+            data = jsonResponse.getData();
+        }
+
+
 
         return data;
     }
@@ -250,7 +261,7 @@ public class MarvelApiConnectionImpl implements MarvelApiConnection{
             for (Map<String,Object> character: characterToSearch) {
                 String nameHero = (String) character.get("name");
                 if(!nameHero.equals(heroName)){
-                    if(charactersList.size()==0){
+                    if(charactersList.isEmpty()){
                         Comic charactersComic = new Comic();
                         charactersComic.setCharacter(nameHero);
                         charactersComic.setComics(Collections.singletonList(comicName));
@@ -278,6 +289,10 @@ public class MarvelApiConnectionImpl implements MarvelApiConnection{
         return charactersList;
     }
 
+
+
+
+
     private static <T> Predicate<T> distinctByKey(Function<? super T, Object> keyExtractor) {
         Map<Object, Boolean> uniqueMap = new ConcurrentHashMap<>();
         return t -> uniqueMap.putIfAbsent(keyExtractor.apply(t), Boolean.TRUE) == null;
@@ -286,12 +301,11 @@ public class MarvelApiConnectionImpl implements MarvelApiConnection{
 
 
     private String generateURL(String elementToFind){
-        String url=envVariables.getGateway()
+        return envVariables.getGateway()
                 .concat(elementToFind)
                 .concat(envVariables.getApiKey()).concat("&")
-                //.concat(envVariables.getTs()).concat("&")
+                .concat(envVariables.getTs()).concat("&")
                 .concat(envVariables.getHash());
-        return url;
     }
 
 

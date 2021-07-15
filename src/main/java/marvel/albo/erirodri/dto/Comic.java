@@ -5,7 +5,7 @@ import java.util.List;
 /**
  * ---------------------------------------------------------------
  * @author Erick Rodriguez Morales
- * @version
+ * @version 1.0.0
  * @category DTO
  *
  * Dto Comic
@@ -18,6 +18,7 @@ public class Comic {
 
 
     public Comic() {
+        // Constructor ...
     }
 
     public String getCharacter() {
