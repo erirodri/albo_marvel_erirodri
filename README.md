@@ -94,19 +94,18 @@ Cabe mencionar que existen algunos “Code Smells” que hacen referencia al uso
 - [Maven](https://maven.apache.org/install.html)
 - [SDK11](https://www.oracle.com/mx/java/technologies/javase-jdk11-downloads.html)
 
-3. Realizar un clean install del proyecto para descargar dependencias
+3. Ejecutar el archivo **assemble.sh** para compilar el componente
 ```bash 
-  > mvn clean install
+  > /assemble.sh
 ```
 
-4. Para fines prácticos(developers) se recomienda ejecutar desde maven con spring-boot:run
+3. Una vez compilado el proyecto, es necesario ejecutar el comando **avengers.sh** para publicar el servicio en el puerto **80**
 ```bash 
-//Como se está haciendo uso de un servicio público de base de datos Mongo, es necesario agregar el comando: -Dspring-boot.run.jvmArguments="-Djdk.tls.client.protocols=TLSv1.2"
-  > mvn spring-boot:run -Dspring-boot.run.jvmArguments="-Djdk.tls.client.protocols=TLSv1.2"
+ > /avengers.sh
 ```
 ## Ejecutar Tests
 
-Para ejecutar los Tests unitarios, ejecutar el comando
+Para ejecutar los Tests unitarios, puedes ejecutar el siguiente comando desde "command line"
 
 ```bash
   mvn clean test
